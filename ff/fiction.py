@@ -1,6 +1,8 @@
 import re, requests, bs4, unicodedata
 from datetime import timedelta, date, datetime
 from time import time
+import regex
+import ast
 
 # Constants
 root = 'https://www.fanfiction.net'
@@ -255,7 +257,20 @@ class Story(object):
             elif date_k is not None:
                 setattr(self, date_tokens[date_k], _get_date_value_from_token(token, date_k))
             else:
-                self.characters = [c.translate(str.maketrans('', '', '[]')).strip() for c in token.split(',')]
+                result = regex.findall(r'\[[A-Za-z\.\,\ ]+\]', token)
+                pairs = []
+                for pair in result:
+                    token = token.replace(pair, '')
+                for pair in result:
+                    p = []
+                    for c in pair.split(','):
+                        p.append(c.replace(']', '').replace('[', '').strip())
+                    pairs.append(p)
+                if token.strip() == '':
+                    self.characters = []
+                else:
+                    self.characters = [c.translate(str.maketrans('', '', '[]')).strip() for c in token.split(',')]
+                self.characters.extend(pairs)
 
         # now we have to fill field which could be left empty
         if not hasattr(self, 'chapter_count'):
